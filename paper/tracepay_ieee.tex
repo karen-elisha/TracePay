@@ -54,7 +54,7 @@
 % ── Metadata ────────────────────────────────────────────────
 \hypersetup{
   pdftitle={TracePay: A Blockchain-Based Supply-Chain Trade Finance Platform with Chainlink Oracle Integration and Programmable Escrow},
-  pdfauthor={},
+  pdfauthor={Karen Elisha Chezhiyan},
   colorlinks=false,
 }
 
@@ -66,13 +66,23 @@
        and On-Chain Invoice Financing}
 
 \author{
-  \IEEEauthorblockN{[Author Name(s)]}
-  \IEEEauthorblockA{
-    \textit{[Department / School]}\\
-    \textit{[Institution / University]}\\
-    [City, Country]\\
-    [email@institution.edu]
-  }
+  \IEEEauthorblockN{Karen Elisha Chezhiyan}
+  \IEEEauthorblockA{\textit{School of Computer Science and Engineering}\\
+    \textit{RV University}\\
+    Bangalore, India\\
+    karenelishachezhiyanbtech24@rvu.edu.in}
+  \and
+  \IEEEauthorblockN{Name}
+  \IEEEauthorblockA{\textit{School of Computer Science and Engineering}\\
+    \textit{RV University}\\
+    Bangalore, India\\
+    mail}
+  \and
+  \IEEEauthorblockN{Name}
+  \IEEEauthorblockA{\textit{School of Computer Science and Engineering}\\
+    \textit{RV University}\\
+    Bangalore, India\\
+    mail}
 }
 
 \maketitle
@@ -125,18 +135,18 @@ Worse, 45\% of small and medium enterprises (SMEs) report rejected or
 delayed trade-finance applications due to insufficient credit history
 or documentation errors \cite{adb2021sme}.
 
-Blockchain technology—and Ethereum smart contracts in particular—offer
+Blockchain technology---and Ethereum smart contracts in particular---offer
 a path toward trust-minimised, programmable settlement in which
 payment is released automatically when verifiable conditions are met
 \cite{nakamoto2008,buterin2014}.
 Several platforms have explored this space
-\cite{tracr2020,we_trade2022,contour2021}, yet most operate in
+\cite{tracr2020,wetrade2022,contour2020}, yet most operate in
 permissioned consortium settings and expose limited programmability.
 
 We present \textbf{TracePay}, an open, permissionless DApp that:
 \begin{itemize}
-  \item Encodes the entire buyer–supplier–financier lifecycle in a
-        single auditable smart contract (~220 SLOC of Solidity).
+  \item Encodes the entire buyer--supplier--financier lifecycle in a
+        single auditable smart contract ($\sim$220 SLOC of Solidity).
   \item Prices escrow in USD via live Chainlink price feeds,
         insulating both parties from ETH volatility at the moment
         of commitment.
@@ -168,13 +178,13 @@ Section~\ref{sec:conclusion} concludes.
 \subsection{Blockchain in Trade Finance}
 
 The application of distributed ledger technology to trade finance has
-been widely studied \cite{dib2020,guo2019}.
+been widely studied \cite{guo2019,guo2024,luo2024}.
 Pinna and Ruttenberg \cite{pinna2016} identified finality, atomicity,
 and programmability as the key properties blockchain brings to
 financial settlement.
-R3's Corda and Hyperledger Fabric have been deployed in consortium
-settings (we.trade, Contour) but require membership agreements and
-do not support public smart contracts.
+Consortium platforms such as we.trade \cite{wetrade2022} and Contour
+\cite{contour2020} demonstrated feasibility but suffered from high
+governance overhead and lack of public accessibility.
 
 \subsection{Decentralised Escrow}
 
@@ -188,17 +198,18 @@ the settlement window can erode half a month's supplier margin.
 \subsection{Oracle Integration}
 
 Connecting on-chain contracts to off-chain real-world data (prices,
-events) is the oracle problem \cite{zhang2016}.
-Chainlink decentralised oracle networks are the dominant solution,
-providing aggregated, tamper-resistant price feeds with on-chain
-freshness metadata \cite{chainlink2021}.
-We leverage the \texttt{AggregatorV3Interface} to obtain a validated
-ETH/USD price with stale-data detection.
+events) is the oracle problem \cite{zhang2016,caldarelli2020}.
+Chainlink decentralised oracle networks provide aggregated,
+tamper-resistant price feeds with on-chain freshness metadata
+\cite{chainlink2021,chainlinkdocs}.
+TracePay leverages the \texttt{AggregatorV3Interface} to obtain a validated
+ETH/USD price with strict stale-data detection.
 
 \subsection{Invoice Financing on Blockchain}
 
 Tokenised receivables and on-chain factoring have been explored
-by Centrifuge \cite{centrifuge2020} and TradeTrust \cite{imda2020}.
+by Centrifuge \cite{centrifuge2020}, TradeTrust \cite{tradetrust2020},
+and fraud-resilient factoring protocols \cite{guerar2020}.
 Our contribution differs in that financing is integrated directly
 into the escrow lifecycle rather than operating as a secondary
 token market, eliminating the need for a separate ERC-20 token
@@ -214,17 +225,17 @@ TracePay defines four actor types, managed via OpenZeppelin's
 Role-Based Access Control (RBAC):
 
 \begin{itemize}
-  \item \textbf{Buyer} — Creates and funds orders; may claim a refund
+  \item \textbf{Buyer}: Creates and funds orders; may claim a refund
         if delivery is missed.
-  \item \textbf{Supplier} — Receives payment upon confirmed delivery;
+  \item \textbf{Supplier}: Receives payment upon confirmed delivery;
         may request early financing.
-  \item \textbf{Verifier} (\texttt{VERIFIER\_ROLE}) — A trusted
+  \item \textbf{Verifier} (\texttt{VERIFIER\_ROLE}): A trusted
         logistics entity (3PL, IoT gateway) that records
         shipment milestones.
-  \item \textbf{Approver} (\texttt{APPROVER\_ROLE}) — Finance
+  \item \textbf{Approver} (\texttt{APPROVER\_ROLE}): Finance
         controllers who must co-authorise release of high-value orders
         under the DoA policy.
-  \item \textbf{Financier} (\texttt{FINANCIER\_ROLE}) — Provides
+  \item \textbf{Financier} (\texttt{FINANCIER\_ROLE}): Provides
         working capital to the supplier by funding the invoice advance.
 \end{itemize}
 
@@ -233,28 +244,27 @@ Role-Based Access Control (RBAC):
 The order status follows a strict directed acyclic graph (DAG),
 ensuring every transition is validated on-chain:
 
-\begin{equation}
-  \texttt{Created} \xrightarrow{\text{fundOrder}}
-  \texttt{Funded} \xrightarrow{\text{Dispatched}}
-  \texttt{Dispatched} \xrightarrow{\text{Delivered}}
-  \texttt{Delivered} \xrightarrow{\text{releasePayment}}
-  \texttt{Settled}
+\begin{align}
+  \texttt{Created} &\xrightarrow{\text{fundOrder}} \texttt{Funded} \nonumber\\
+  &\xrightarrow{\text{Dispatched}} \texttt{Dispatched} \nonumber\\
+  &\xrightarrow{\text{Delivered}} \texttt{Delivered} \nonumber\\
+  &\xrightarrow{\text{releasePayment}} \texttt{Settled}
   \label{eq:fsm}
-\end{equation}
+\end{align}
 
 \noindent A parallel refund path is available when the delivery
 deadline expires before the \texttt{Delivered} state is reached:
 
 \begin{equation}
   \{\texttt{Funded}, \texttt{Dispatched}\}
-  \xrightarrow{\text{claimRefund},\; t > t_{\text{deadline}}}
+  \xrightarrow[\Delta t > \text{deadline}]{\text{claimRefund}}
   \texttt{Refunded}
 \end{equation}
 
 \subsection{Oracle-Priced Escrow}
 
 Rather than specifying a fixed ETH amount, buyers specify the invoice
-value in USD (8-decimal Chainlink format, e.g.\ \$1{,}000 is stored as
+value in USD (8-decimal Chainlink format, e.g., \$1{,}000 is stored as
 $1000 \times 10^8$).
 At the moment of \texttt{fundOrder}, the contract fetches the live
 ETH/USD price $P$ from the Chainlink feed and computes the required
@@ -270,7 +280,7 @@ escrow in wei:
 all Chainlink USD pairs), $u_{\text{USD}}$ is the invoice USD amount
 (also 8-decimal), and $P$ is the raw integer price returned by the
 feed.
-The price is rejected if (i) it is $\le 0$, (ii) the round is
+The price is rejected if: (i) it is $\le 0$, (ii) the round is
 incomplete ($\textit{answeredInRound} < \textit{roundId}$), or (iii)
 the data age exceeds \texttt{maxPriceAge} (default 2\,hours,
 matching the Sepolia ETH/USD heartbeat of 1\,hour).
@@ -281,7 +291,7 @@ Only addresses holding \texttt{VERIFIER\_ROLE} may call
 \texttt{recordMilestone}.
 Two milestones are supported: \texttt{Dispatched} (order has left
 the warehouse) and \texttt{Delivered} (proof-of-delivery received).
-Each call accepts an \texttt{evidenceCid} parameter—a
+Each call accepts an \texttt{evidenceCid} parameter---a
 content-addressed IPFS hash of the supporting document (bill of lading,
 IoT telemetry log, e-signature).
 This ensures the on-chain log is both tamper-evident and
@@ -300,13 +310,12 @@ Two invariants are enforced:
         at most once per order.
 \end{enumerate}
 
-The default configuration used in tests sets $\tau_{\text{DoA}} =
-\$5{,}000$ (8-decimal) and $k = 2$.
+The default configuration sets $\tau_{\text{DoA}} = \$5{,}000$ (8-decimal) and $k = 2$.
 
 \subsection{Payment Waterfall}
 
 Upon successful \texttt{releasePayment}, funds are distributed in
-the following priority order (Fig.\,\ref{fig:waterfall}):
+the following priority order (Fig.~\ref{fig:waterfall}):
 
 \begin{enumerate}
   \item Financier receives \texttt{financierDueWei} (advance +
@@ -321,18 +330,18 @@ eliminating reentrancy risk on the settlement path.
 \begin{figure}[htbp]
   \centering
   \setlength{\unitlength}{1pt}
-  \begin{picture}(220,100)
+  \begin{picture}(220,70)
     % Escrow box
-    \put(0,10){\framebox(220,80){}}
-    \put(5,80){\small\texttt{escrowWei}}
+    \put(0,10){\framebox(220,55){}}
+    \put(5,52){\scriptsize\texttt{escrowWei}}
     % Financier slice
-    \put(0,10){\framebox(100,80){}}
-    \put(15,45){\small Financier}
-    \put(8,32){\tiny \texttt{financierDueWei}}
+    \put(0,10){\framebox(95,55){}}
+    \put(18,34){\footnotesize Financier}
+    \put(10,22){\tiny \texttt{financierDueWei}}
     % Supplier slice
-    \put(100,10){\framebox(120,80){}}
-    \put(130,52){\small Supplier}
-    \put(120,40){\tiny remainder}
+    \put(95,10){\framebox(125,55){}}
+    \put(132,34){\footnotesize Supplier}
+    \put(128,22){\tiny remainder}
   \end{picture}
   \caption{Payment waterfall: financier is paid first (advance + fee),
            supplier receives the balance.}
@@ -369,13 +378,13 @@ at settlement.
 TracePay is built with the following components:
 \begin{itemize}
   \item \textbf{Solidity 0.8.24} with \texttt{optimizer: \{runs: 200\}}.
-  \item \textbf{OpenZeppelin Contracts v5} — \texttt{AccessControl},
-        \texttt{ReentrancyGuard}.
-  \item \textbf{Hardhat 2.x} — compilation, local EVM, testing.
-  \item \textbf{Hardhat Gas Reporter} — per-function gas measurement.
-  \item \textbf{MockV3Aggregator} — Chainlink mock for deterministic
+  \item \textbf{OpenZeppelin Contracts v5} --- \texttt{AccessControl},
+        \texttt{ReentrancyGuard} \cite{openzeppelin}.
+  \item \textbf{Hardhat 2.x} --- compilation, local EVM, testing.
+  \item \textbf{Hardhat Gas Reporter} --- per-function gas measurement.
+  \item \textbf{MockV3Aggregator} --- Chainlink mock for deterministic
         testing (price and staleness controllable).
-  \item \textbf{Ethers.js v6 + MetaMask} — browser-based frontend
+  \item \textbf{Ethers.js v6 + MetaMask} --- browser-based frontend
         on Ethereum Sepolia testnet.
 \end{itemize}
 
@@ -391,7 +400,7 @@ enum Status {
 struct Order {
   address buyer;
   address supplier;
-  bytes32 invoiceHash;    // keccak256 of off-chain invoice
+  bytes32 invoiceHash;    // keccak256 hash
   uint256 invoiceUsd;     // 8-decimal USD value
   uint256 escrowWei;      // locked ETH in wei
   uint256 lockedPrice;    // ETH/USD at funding time
@@ -428,9 +437,7 @@ function latestPrice()
 Following the Ethereum security best-practice of
 \emph{checks-effects-interactions} (CEI) \cite{solidity_patterns},
 all ETH transfers are deferred to a dedicated \texttt{withdraw()}
-function.
-This eliminates reentrancy vectors on the main settlement path and
-decouples gas costs from settlement logic:
+function:
 
 \begin{lstlisting}[caption={Pull-payment withdrawal.},
                    label={lst:withdraw}]
@@ -459,35 +466,35 @@ Table~\ref{tab:tests} summarises the coverage.
   \caption{TracePay Test Coverage Summary}
   \label{tab:tests}
   \centering
+  \small
   \renewcommand{\arraystretch}{1.15}
-  \begin{tabular}{clc}
+  \begin{tabular}{cp{5.3cm}c}
     \toprule
     \textbf{TC} & \textbf{Scenario} & \textbf{Result} \\
     \midrule
-    TC-01 & Full happy path: create $\to$ fund $\to$ deliver $\to$ settle & \checkmark \\
-    TC-02 & Oracle conversion correctness at varying ETH prices         & \checkmark \\
-    TC-03 & DoA: high-value order requires 2 distinct approvals          & \checkmark \\
-    TC-04 & Invoice financing waterfall (advance + fee)                  & \checkmark \\
-    TC-05 & Refund after deadline when undelivered                       & \checkmark \\
-    TC-06 & Overpayment credited back to buyer via pull-payment          & \checkmark \\
-    TC-07 & Duplicate invoice hash rejected                              & \checkmark \\
-    TC-08 & Stale oracle price blocks funding                            & \checkmark \\
-    TC-09 & Negative oracle price blocks quoting                         & \checkmark \\
-    TC-10 & Underfunding ETH reverts                                     & \checkmark \\
-    TC-11 & Only verifier records milestones; order enforced             & \checkmark \\
-    TC-12 & Buyer cannot approve own payment (separation of duties)      & \checkmark \\
-    TC-13 & Same approver cannot approve twice                           & \checkmark \\
-    TC-14 & Release before delivery and double-release both revert       & \checkmark \\
-    TC-15 & Non-financier and wrong-amount financing both revert         & \checkmark \\
-    TC-16 & Empty-balance withdraw reverts; refund blocked post-delivery & \checkmark \\
+    TC-01 & Happy path: create $\to$ fund $\to$ deliver $\to$ settle & \checkmark \\
+    TC-02 & Oracle conversion correctness at varying ETH prices       & \checkmark \\
+    TC-03 & DoA: high-value order requires 2 distinct approvals        & \checkmark \\
+    TC-04 & Invoice financing waterfall (advance + fee)                & \checkmark \\
+    TC-05 & Refund after deadline when undelivered                     & \checkmark \\
+    TC-06 & Overpayment credited back to buyer via pull-payment        & \checkmark \\
+    TC-07 & Duplicate invoice hash rejected                            & \checkmark \\
+    TC-08 & Stale oracle price blocks funding                          & \checkmark \\
+    TC-09 & Negative oracle price blocks quoting                       & \checkmark \\
+    TC-10 & Underfunding ETH reverts                                   & \checkmark \\
+    TC-11 & Only verifier records milestones in order                  & \checkmark \\
+    TC-12 & Separation of duties: buyer cannot approve release         & \checkmark \\
+    TC-13 & Same approver cannot approve twice                         & \checkmark \\
+    TC-14 & Premature release and double-release both revert           & \checkmark \\
+    TC-15 & Non-financier and wrong-amount financing revert            & \checkmark \\
+    TC-16 & Empty-balance withdraw and invalid refund revert           & \checkmark \\
     \midrule
-    \multicolumn{2}{l}{\textbf{Total}} & \textbf{16 / 16} \\
+    \multicolumn{2}{l}{\textbf{Total passing test cases}} & \textbf{16 / 16} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-All 16 tests pass in approximately 3 seconds on commodity hardware
-(macOS, Node.js 20, Hardhat local EVM).
+All 16 tests pass deterministically on a local EVM.
 
 \subsection{Gas Consumption}
 
@@ -499,7 +506,8 @@ block limit 30,000,000).
   \caption{Gas Consumption by Function}
   \label{tab:gas}
   \centering
-  \renewcommand{\arraystretch}{1.15}
+  \small
+  \renewcommand{\arraystretch}{1.12}
   \begin{tabular}{lrrr}
     \toprule
     \textbf{Function} & \textbf{Min} & \textbf{Max} & \textbf{Avg} \\
@@ -521,19 +529,15 @@ block limit 30,000,000).
   \end{tabular}
 \end{table}
 
-The most expensive individual transaction is \texttt{createOrder}
-(181,063 gas), owing to the three SSTORE operations that initialise
-a new \texttt{Order} storage slot.
-At an ETH price of \$2,000 and a base fee of 20\,gwei, this
-corresponds to approximately \$7.24 per order creation.
-All other lifecycle operations cost under 100,000 gas.
+The most expensive operation is \texttt{createOrder} (181,063 gas)
+due to storage initialisation.
+All subsequent lifecycle operations require less than 100,000 gas units.
 
 \subsection{Deployment Footprint}
 
-The contract deploys in 2,227,091 gas on average, occupying 7.4\% of
-the 30,000,000-gas Ethereum block limit.
-This leaves ample headroom for the contract to be included in congested
-blocks without needing priority tips.
+The contract deploys in 2,227,091 gas units on average, occupying 7.4\%
+of the 30,000,000-gas Ethereum block limit, ensuring rapid inclusion
+even during periods of moderate network congestion.
 
 % ============================================================
 \section{Security Analysis}
@@ -547,8 +551,7 @@ All state-mutating external calls follow the CEI pattern, and the
 moves ETH (\texttt{fundOrder}, \texttt{fundFinancing},
 \texttt{releasePayment}, \texttt{claimRefund}, \texttt{withdraw}).
 The pull-payment model further decouples settlement logic from
-ETH transfer, ensuring that a malicious supplier or financier
-cannot exploit a re-entry to drain funds.
+ETH transfer.
 
 \subsection{Access Control}
 
@@ -560,23 +563,23 @@ Table~\ref{tab:rbac} maps each privileged function to its required role.
   \caption{Role-to-Function Access Map}
   \label{tab:rbac}
   \centering
-  \renewcommand{\arraystretch}{1.15}
-  \begin{tabular}{ll}
+  \small
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{lp{4.2cm}}
     \toprule
     \textbf{Role} & \textbf{Functions} \\
     \midrule
     \texttt{VERIFIER\_ROLE}  & \texttt{recordMilestone} \\
     \texttt{APPROVER\_ROLE}  & \texttt{approveRelease} \\
     \texttt{FINANCIER\_ROLE} & \texttt{fundFinancing} \\
-    \texttt{DEFAULT\_ADMIN}  & \texttt{setPolicy}, \texttt{setFinancingTerms},
-                               \texttt{setMaxPriceAge} \\
+    \texttt{DEFAULT\_ADMIN}  & \texttt{setPolicy}, \texttt{setFinancingTerms}, \newline \texttt{setMaxPriceAge} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsection{Oracle Manipulation}
 
-The Chainlink ETH/USD feed is itself decentralised and aggregated
+The Chainlink ETH/USD feed is decentralised and aggregated
 from multiple node operators.
 TracePay adds a defence-in-depth layer: the price is locked at the
 moment of \texttt{fundOrder} and stored in \texttt{lockedPrice} for
@@ -584,29 +587,26 @@ auditability.
 A post-funding price change cannot affect an already-committed escrow
 amount.
 
-\subsection{Front-Running}
+\subsection{Front-Running and Miner Extractable Value (MEV)}
 
-The \texttt{fundOrder} function is caller-restricted to the order's
+The \texttt{fundOrder} function is restricted to the order's
 buyer.
-An adversarial miner could observe the transaction and attempt to
-front-run a price update; however, the oracle freshness window
-(2\,hours) and the buyer-only restriction make profitable front-running
-economically unviable on a well-connected testnet or mainnet.
+An adversarial observer cannot substitute their own address or
+divert the locked funds.
+The oracle freshness window (2\,hours) prevents exploitation of
+outdated round prices.
 
-\subsection{Integer Overflow / Underflow}
+\subsection{Integer Arithmetic}
 
-Solidity 0.8.x includes built-in checked arithmetic.
-All basis-point calculations use intermediate \texttt{uint256}
-arithmetic with no possibility of overflow at realistic escrow values
-(well below $2^{128}$\,wei).
+Solidity 0.8.x includes native checked arithmetic preventing overflows.
+All basis-point calculations use 256-bit unsigned integers without
+precision loss.
 
 \subsection{Duplicate Invoice Prevention}
 
 The \texttt{invoiceRegistered} mapping records every accepted
-\texttt{invoiceHash} (keccak256 of the off-chain invoice bytes).
-A second \texttt{createOrder} with an identical hash reverts with
-\texttt{"duplicate invoice"}, preventing replay attacks on the
-invoice layer.
+\texttt{invoiceHash} (keccak256 hash of the off-chain invoice).
+Replay attempts immediately revert with \texttt{"duplicate invoice"}.
 
 % ============================================================
 \section{Discussion and Future Work}
@@ -614,79 +614,48 @@ invoice layer.
 
 \subsection{Limitations}
 
-\textbf{Oracle centralisation risk.}
-Although Chainlink decentralises the price feed, it remains a trusted
-external data source.
-A sustained oracle failure or governance attack could halt new order
-funding.
-Fallback oracles (e.g., Uniswap TWAP) could be integrated via an
-oracle router pattern.
+\textbf{Oracle dependency.}
+Although Chainlink mitigates single points of failure, reliance on
+external feeds introduces residual risk during extreme network partitions.
+A multi-oracle router could provide secondary fallback sources.
 
-\textbf{Off-chain verifier trust.}
-Milestone verification depends on the integrity of
-\texttt{VERIFIER\_ROLE} holders.
-In the current design this is a governance assumption rather than
-a cryptographic guarantee.
-Integration with IoT-signed attestations (e.g., Chainlink Functions
-or TEE-backed signatures) would strengthen this assumption.
+\textbf{Verifier centralization.}
+Milestone recording relies on authorized verifiers holding
+\texttt{VERIFIER\_ROLE}.
+Integrating cryptographically signed IoT telemetry or zero-knowledge
+proofs can reduce human verifier dependency.
 
-\textbf{USD/ETH volatility within the escrow window.}
-The escrow is locked in wei at funding time.
-If ETH appreciates significantly before settlement, the supplier
-effectively receives more USD-equivalent value than the invoice.
-Conversely, depreciation benefits the buyer.
-A stablecoin-denominated escrow (e.g., USDC) would eliminate this
-residual risk.
-
-\textbf{Single-chain deployment.}
-TracePay is currently deployed on Ethereum Sepolia.
-Cross-chain trade (e.g., buyer on Ethereum, supplier on Polygon) would
-require a bridge or inter-chain messaging protocol such as CCIP.
+\textbf{Volatility during escrow.}
+Because escrow is locked in ETH, intra-shipment currency movement
+impacts the fiat-equivalent value received at settlement.
+Integrating ERC-20 stablecoins (e.g., USDC) provides price stability.
 
 \subsection{Future Work}
 
+Future enhancements include:
 \begin{itemize}
-  \item \textbf{ERC-20 / stablecoin support}: replace ETH with USDC or
-        DAI to eliminate currency risk.
-  \item \textbf{NFT-backed invoices}: mint ERC-721 tokens for each
-        order so that receivables can be traded on secondary markets.
-  \item \textbf{Zero-knowledge privacy}: use ZK proofs to prove
-        milestone delivery without revealing the shipment details
-        on-chain.
-  \item \textbf{Formal verification}: apply tools such as Certora Prover
-        or Echidna to formally verify the state-machine invariants.
-  \item \textbf{Layer-2 deployment}: migrate to an Ethereum L2 (Arbitrum,
-        Optimism) to reduce gas costs by 10--100$\times$.
+  \item Multicurrency and stablecoin settlement (USDC / ERC-20).
+  \item NFT-tokenized receivables (ERC-721) for secondary market trading.
+  \item Zero-knowledge proofs for confidential milestone verification.
+  \item Layer-2 rollups (Arbitrum, Base) deployment for 10--100$\times$ gas reduction.
 \end{itemize}
 
 % ============================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented TracePay, a self-contained Ethereum smart contract that
-unifies USD-anchored escrow, oracle-validated pricing, logistics
-milestone verification, Delegation-of-Authority multi-approval, and
-on-chain invoice factoring within a single auditable codebase.
-The system eliminates the need for letters of credit, bank guarantees,
-and external factoring intermediaries by encoding trust as code and
-enforcing it on the Ethereum Virtual Machine.
-
-A comprehensive test suite of 16 cases validates all functional
-properties and adversarial edge cases with 100\% pass rate.
-Gas benchmarks confirm that the contract is economically viable on
-Ethereum mainnet for invoices above \$500, and highly practical on
-Layer-2 networks or the Sepolia testnet.
-
-TracePay demonstrates that a production-quality, multi-party
-financial protocol can be implemented in under 250 lines of Solidity,
-leveraging open-source standards (OpenZeppelin, Chainlink) rather
-than bespoke infrastructure—lowering the barrier for SMEs to
-participate in transparent, automated global trade finance.
+TracePay demonstrates a trust-minimized trade finance platform
+encapsulated in a single Solidity smart contract.
+By combining oracle-priced escrow, multi-signature approval, milestone
+verification, and on-chain invoice factoring, TracePay eliminates
+intermediary delays and high fees.
+With all 16 security and functional tests passing and deployment gas
+within 7.4\% of the block limit, TracePay offers a practical,
+auditable foundation for decentralized trade finance.
 
 % ============================================================
 \balance
 \bibliographystyle{IEEEtran}
-\bibliography{tracepay_refs}
+\bibliography{references}
 
 \end{document}
-

@@ -3,3 +3,11 @@ node_modules
 cache
 artifacts
 typechain-types
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.synctex.gz
