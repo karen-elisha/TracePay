@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TracePay – Supply-Chain Trade Finance DApp</title>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#eef6ff;
+    --bg-2:#e6f0ff;
+    --card:rgba(255,255,255,0.62);
+    --card-strong:rgba(255,255,255,0.8);
+    --line:rgba(148,163,184,0.3);
+    --txt:#0f172a;
+    --mut:#475569;
+    --acc:#2563eb;
+    --acc-2:#60a5fa;
+    --acc-soft:#eaf2ff;
+    --ok:#16a34a;
+    --bad:#ef4444;
+    --warn:#f59e0b;
+    --shadow:0 18px 45px rgba(37,99,235,0.12);
+  }
+
+  *{box-sizing:border-box}
+  html { scroll-behavior:smooth }
+  body{
+    margin:0;
+    font:14px/1.5 "Inter","Segoe UI",Roboto,sans-serif;
+    background:
+      radial-gradient(circle at top left, rgba(96,165,250,0.18), transparent 20%),
+      radial-gradient(circle at bottom right, rgba(37,99,235,0.12), transparent 25%),
+      linear-gradient(135deg, var(--bg) 0%, var(--bg-2) 100%);
+    color:var(--txt);
+  }
+
+  header{
+    position:sticky;
+    top:0;
+    z-index:20;
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 28px;
+    margin:18px auto 0;
+    width:min(1260px, calc(100% - 24px));
+    background:rgba(255,255,255,0.44);
+    border:1px solid rgba(255,255,255,0.4);
+    border-radius:22px;
+    box-shadow:0 10px 25px rgba(15,23,42,0.06);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+  }
+
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-mark{
+    width:40px;height:40px;border-radius:12px;
+    display:grid;place-items:center;
+    background:linear-gradient(135deg, var(--acc) 0%, var(--acc-2) 100%);
+    box-shadow:0 12px 22px rgba(37,99,235,0.24);
+    color:#fff;font-weight:800;font-size:18px;
+  }
+  .brand-copy{display:flex;flex-direction:column;line-height:1.1}
+  .brand-name{font-size:1.8rem;font-weight:800;letter-spacing:-0.05em}
+  .brand-name .accent{color:var(--acc)}
+  .brand-sub{font-size:11px;color:var(--mut);letter-spacing:.12em;text-transform:uppercase}
+
+  h1{font-size:20px;margin:0} h1 span{color:var(--acc)} h2{font-size:15px;margin:0 0 12px;color:var(--acc);font-weight:700}
+  main{max-width:1250px;margin:20px auto;padding:0 16px 28px;display:grid;gap:18px}
+  .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:18px 18px 16px;
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+
+  input,select{
+    width:100%;
+    padding:11px 12px;
+    margin:4px 0 12px;
+    background:rgba(255,255,255,0.7);
+    border:1px solid rgba(148,163,184,0.35);
+    border-radius:12px;
+    color:var(--txt);
+    outline:none;
+    transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+  }
+  input:focus,select:focus{
+    border-color:rgba(37,99,235,0.5);
+    box-shadow:0 0 0 4px rgba(37,99,235,0.08);
+  }
+
+  label{font-size:12px;color:var(--mut);font-weight:600}
+  button{
+    background:linear-gradient(135deg, var(--acc) 0%, var(--acc-2) 100%);
+    color:#fff;border:0;border-radius:12px;padding:9px 14px;font-weight:700;cursor:pointer;margin:2px 6px 2px 0;
+    box-shadow:0 10px 20px rgba(37,99,235,0.18);
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+  button:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(37,99,235,0.22)}
+  button.sec{background:rgba(148,163,184,0.12);color:var(--txt);box-shadow:none;border:1px solid rgba(148,163,184,0.22)}
+  button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+  .pill{display:inline-block;padding:4px 9px;border-radius:999px;font-size:12px;background:var(--acc-soft);color:var(--acc);margin-right:6px;border:1px solid rgba(37,99,235,0.08)}
+  .pill.r{background:rgba(96,165,250,0.12);color:#1d4ed8}
+  table{width:100%;border-collapse:collapse;font-size:13px} th,td{padding:10px 8px;border-bottom:1px solid rgba(148,163,184,0.2);text-align:left;vertical-align:top}
+  th{color:var(--mut);font-weight:700} .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .audit-list{list-style:none;padding:0;margin:0}
+  .audit-item{position:relative;display:grid;grid-template-columns:16px minmax(0,1fr);gap:14px;padding:0 0 20px}
+  .audit-item:not(:last-child)::before{content:"";position:absolute;left:6px;top:15px;bottom:0;width:2px;background:rgba(37,99,235,0.14)}
+  .audit-dot{position:relative;z-index:1;width:14px;height:14px;margin-top:3px;border:3px solid #fff;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px rgba(37,99,235,0.2)}
+  .audit-content{min-width:0;padding:0 0 14px;border-bottom:1px solid rgba(148,163,184,0.2)}
+  .audit-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .audit-title{margin:0;color:var(--txt);font-size:14px;font-weight:750}
+  .audit-order{color:var(--mut);font-size:12px;font-weight:600}
+  .audit-details{margin:5px 0 8px;color:var(--mut);overflow-wrap:anywhere}
+  .audit-link{font-size:12px;font-weight:700}
+  .audit-empty{padding:14px 0;color:var(--mut)}
+  .s0{color:var(--mut)}.s1{color:var(--warn)}.s2{color:#2563eb}.s3{color:#7c3aed}.s4{color:var(--ok)}.s5{color:var(--bad)}
+  #toast{position:fixed;bottom:18px;right:18px;max-width:420px;background:rgba(15,23,42,0.9);color:#fff;border:1px solid rgba(148,163,184,0.2);padding:12px 14px;border-radius:14px;display:none;z-index:9;box-shadow:0 16px 28px rgba(15,23,42,0.18)}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .scroll{overflow-x:auto} .kpi{font-size:28px;font-weight:800;letter-spacing:-0.04em}
+  .status-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.38);border:1px solid rgba(148,163,184,0.22);border-radius:999px;color:var(--mut);font-size:12px;font-weight:700}
+  .status-badge::before{content:"";width:8px;height:8px;border-radius:50%;background:#cbd5e1;display:inline-block;box-shadow:0 0 0 6px rgba(148,163,184,0.12)}
+  .status-badge.connected{color:#166534;background:rgba(134,239,172,0.14);border-color:rgba(34,197,94,0.18)}
+  .status-badge.connected::before{background:#22c55e;box-shadow:0 0 0 6px rgba(34,197,94,0.08)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" aria-label="TracePay brand">
+    <div class="brand-mark">T</div>
+    <div class="brand-copy">
+      <div class="brand-name"><span class="accent">Trace</span>Pay</div>
+      <div class="brand-sub">Sepolia testnet</div>
+    </div>
+  </div>
+
+  <div class="status-badge" id="status">Not connected</div>
+  <button id="btnConnect">Connect MetaMask</button>
+</header>
+
+<main>
+  <section class="grid">
+    <div class="card"><h2>Live oracle</h2><div class="kpi" id="price">–</div><div style="color:var(--mut)" id="policy">–</div></div>
+    <div class="card"><h2>My wallet</h2><div id="me" class="mono">–</div><div id="roles" style="margin:8px 0 12px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span>Withdrawable: <b id="claimable">0</b> ETH</span><button id="btnWithdraw" class="sec">Withdraw</button></div></div>
+    <div class="card"><h2>Create trade order</h2>
+      <label>Supplier wallet</label><input id="cSupplier" placeholder="0x…">
+      <label>Invoice reference (hashed in browser; never stored on-chain)</label><input id="cInvoice" placeholder="INV-2026-0001">
+      <label>Invoice value (USD)</label><input id="cUsd" type="number" value="1000">
+      <label>Delivery deadline (minutes from now)</label><input id="cDeadline" type="number" value="60">
+      <button id="btnCreate">Create order</button></div>
+  </section>
+
+  <section class="card"><h2>Orders &amp; settlement lifecycle</h2>
+    <div class="scroll"><table><thead><tr><th>#</th><th>Parties</th><th>Invoice</th><th>Escrow</th><th>Status</th><th>DoA</th><th>Financing</th><th>Actions</th></tr></thead>
+    <tbody id="orders"><tr><td colspan="8" style="color:var(--mut)">Connect wallet to load orders…</td></tr></tbody></table></div>
+    <button class="sec" id="btnRefresh">Refresh</button>
+  </section>
+
+  <section class="grid">
+    <div class="card" id="adminCard" style="display:none"><h2>Admin: grant role</h2>
+      <label>Wallet</label><input id="gWallet" placeholder="0x…">
+      <label>Role</label><select id="gRole"><option>VERIFIER_ROLE</option><option>APPROVER_ROLE</option><option>FINANCIER_ROLE</option></select>
+      <button id="btnGrant">Grant</button></div>
+    <div class="card" style="grid-column:1 / -1">
+      <h2>Activity history</h2>
+      <p style="color:var(--mut);margin:-4px 0 18px">A plain-language record of what happened to orders. Newest activity appears first; each item links to its Sepolia transaction.</p>
+      <ol class="audit-list" id="events" aria-live="polite"><li class="audit-empty">Connect your wallet to view activity.</li></ol>
+    </div>
+  </section>
+</main>
+<div id="toast"></div>
+
+<script>
+// ─────────────── CONFIG: edit these two lines after you deploy ───────────────
+const CONFIG = { CONTRACT_ADDRESS: "0x78bb5DF6c5d26A92d723588b10d0f4E4Ffd171BD", DEPLOY_BLOCK: 12041103 };
+const SEPOLIA = { chainId: "0xaa36a7", chainName: "Sepolia", nativeCurrency: { name: "SepoliaETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"], blockExplorerUrls: ["https://sepolia.etherscan.io"] };
+
+const ABI = [
+ "function orders(uint256) view returns (address buyer,address supplier,bytes32 invoiceHash,uint256 invoiceUsd,uint256 escrowWei,uint256 lockedPrice,uint64 deadline,uint8 status,uint8 approvals,bool financeRequested,address financier,uint256 financierDueWei)",
+ "function orderCount() view returns (uint256)", "function claimable(address) view returns (uint256)",
+ "function latestPrice() view returns (uint256)", "function quoteWei(uint256) view returns (uint256)",
+ "function financingQuote(uint256) view returns (uint256 advanceWei,uint256 dueWei)",
+ "function doaThresholdUsd() view returns (uint256)", "function requiredApprovals() view returns (uint8)",
+ "function hasRole(bytes32,address) view returns (bool)", "function hasApproved(uint256,address) view returns (bool)",
+ "function createOrder(address,bytes32,uint256,uint64) returns (uint256)", "function fundOrder(uint256) payable",
+ "function recordMilestone(uint256,uint8,string)", "function approveRelease(uint256)", "function releasePayment(uint256)",
+ "function claimRefund(uint256)", "function requestFinancing(uint256)", "function fundFinancing(uint256) payable",
+ "function withdraw()", "function grantRole(bytes32,address)",
+ "event OrderCreated(uint256 indexed id,address indexed buyer,address indexed supplier,bytes32 invoiceHash,uint256 invoiceUsd,uint64 deadline)",
+ "event OrderFunded(uint256 indexed id,uint256 weiLocked,uint256 ethUsdPrice)",
+ "event MilestoneRecorded(uint256 indexed id,uint8 milestone,string evidenceCid,address verifier)",
+ "event ApprovalGranted(uint256 indexed id,address indexed approver,uint8 approvals)",
+ "event PaymentReleased(uint256 indexed id,uint256 toSupplier,uint256 toFinancier)",
+ "event Refunded(uint256 indexed id,uint256 amount)", "event FinancingRequested(uint256 indexed id,address indexed supplier)",
+ "event FinancingFunded(uint256 indexed id,address indexed financier,uint256 advanceWei,uint256 dueWei)",
+ "event Withdrawn(address indexed account,uint256 amount)"
+];
+const STATUS = ["Created", "Funded", "Dispatched", "Delivered", "Settled", "Refunded"];
+const ROLE = { VERIFIER_ROLE: ethers.id("VERIFIER_ROLE"), APPROVER_ROLE: ethers.id("APPROVER_ROLE"), FINANCIER_ROLE: ethers.id("FINANCIER_ROLE") };
+
+let provider, signer, me, tp, my = {};
+const $ = (id) => document.getElementById(id);
+const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+const eth = (w) => Number(ethers.formatEther(w)).toFixed(4);
+const usd = (v) => "$" + (Number(v) / 1e8).toLocaleString();
+const tx = (h) => `<a target="_blank" href="https://sepolia.etherscan.io/tx/${h}">tx ↗</a>`;
+
+function toast(msg, ms = 6000) { const t = $("toast"); t.innerHTML = msg; t.style.display = "block"; clearTimeout(t._t); t._t = setTimeout(() => t.style.display = "none", ms); }
+function reason(e) { return e.reason || e.shortMessage || (e.info && e.info.error && e.info.error.message) || e.message; }
+
+async function run(label, fn) {                       // wraps every write: sends tx, waits, reports hash or revert reason
+  try {
+    toast(`⏳ ${label}… confirm in MetaMask`);
+    const t = await fn(); toast(`⏳ ${label}: mined soon… ${tx(t.hash)}`);
+    await t.wait(); toast(`✅ ${label} confirmed ${tx(t.hash)}`);
+  } catch (e) { toast(`❌ ${label} failed: ${reason(e)}`, 9000); }
+  await refresh();
+}
+
+async function connect() {
+  if (!window.ethereum) return toast("MetaMask not found. Install it from metamask.io");
+  if (!ethers.isAddress(CONFIG.CONTRACT_ADDRESS)) return toast("Set CONTRACT_ADDRESS in index.html first.");
+  provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  try { await provider.send("wallet_switchEthereumChain", [{ chainId: SEPOLIA.chainId }]); }
+  catch (e) { if (e.code === 4902) await provider.send("wallet_addEthereumChain", [SEPOLIA]); else return toast("Please switch MetaMask to Sepolia"); }
+  provider = new ethers.BrowserProvider(window.ethereum);          // refresh after network switch
+  signer = await provider.getSigner(); me = await signer.getAddress();
+  tp = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, signer);
+  window.ethereum.on("accountsChanged", () => location.reload());
+  window.ethereum.on("chainChanged", () => location.reload());
+  $("btnConnect").textContent = short(me);
+  $("status").textContent = "Connected · Sepolia";
+  $("status").classList.add("connected");
+  await refresh();
+}
+
+async function refresh() {
+  if (!tp) return;
+  try {
+    const [p, th, ra, cl] = await Promise.all([tp.latestPrice().catch(() => null), tp.doaThresholdUsd(), tp.requiredApprovals(), tp.claimable(me)]);
+    $("price").textContent = p ? "$" + (Number(p) / 1e8).toFixed(2) : "stale / unavailable";
+    $("policy").textContent = `DoA: invoices ≥ ${usd(th)} need ${ra} distinct approvals`;
+    $("claimable").textContent = eth(cl);
+    my = { admin: await tp.hasRole(ethers.ZeroHash, me), verifier: await tp.hasRole(ROLE.VERIFIER_ROLE, me),
+           approver: await tp.hasRole(ROLE.APPROVER_ROLE, me), financier: await tp.hasRole(ROLE.FINANCIER_ROLE, me), th, ra };
+    $("me").textContent = me;
+    $("roles").innerHTML = Object.entries({ admin: my.admin, verifier: my.verifier, approver: my.approver, financier: my.financier })
+      .filter(([, v]) => v).map(([k]) => `<span class="pill r">${k}</span>`).join("") || '<span class="pill">buyer / supplier (no special role)</span>';
+    $("adminCard").style.display = my.admin ? "block" : "none";
+    await loadOrders(); await loadEvents();
+  } catch (e) { toast("Load error: " + reason(e)); }
+}
+
+async function loadOrders() {
+  const n = Number(await tp.orderCount()); let rows = "";
+  for (let id = n; id >= 1; id--) {
+    const o = await tp.orders(id); const st = Number(o.status);
+    const high = o.invoiceUsd >= my.th, now = Date.now() / 1000, isBuyer = o.buyer === me, isSup = o.supplier === me;
+    const done = o.approvals >= my.ra; let a = "";
+    if (isBuyer && st === 0) a += `<button onclick="fund(${id})">Fund escrow</button>`;
+    if (my.verifier && st === 1) a += `<button onclick="milestone(${id},2)">Mark dispatched</button>`;
+    if (my.verifier && st === 2) a += `<button onclick="milestone(${id},3)">Confirm delivery</button>`;
+    if (isSup && (st === 1 || st === 2) && !o.financeRequested) a += `<button class="sec" onclick="reqFin(${id})">Request financing</button>`;
+    if (my.financier && o.financeRequested && o.financier === ethers.ZeroAddress && (st === 1 || st === 2)) a += `<button onclick="fundFin(${id})">Fund advance</button>`;
+    if (my.approver && st === 3 && high && !isBuyer && !isSup && !(await tp.hasApproved(id, me))) a += `<button class="sec" onclick="approve(${id})">Approve</button>`;
+    if (st === 3) a += `<button onclick="release(${id})" ${high && !done ? "disabled title='DoA approvals missing'" : ""}>Release payment</button>`;
+    if (isBuyer && (st === 1 || st === 2) && now > Number(o.deadline)) a += `<button class="sec" onclick="refund(${id})">Claim refund</button>`;
+    rows += `<tr><td>${id}</td>
+      <td class="mono">B ${short(o.buyer)}<br>S ${short(o.supplier)}</td>
+      <td>${usd(o.invoiceUsd)}${high ? ' <span class="pill">high-value</span>' : ""}<br><span class="mono" style="color:var(--mut)">${o.invoiceHash.slice(0, 10)}…</span></td>
+      <td>${o.escrowWei > 0n ? eth(o.escrowWei) + " ETH<br><small style='color:var(--mut)'>@ $" + (Number(o.lockedPrice) / 1e8).toFixed(2) + "</small>" : "–"}</td>
+      <td class="s${st}"><b>${STATUS[st]}</b><br><small style="color:var(--mut)">due ${new Date(Number(o.deadline) * 1000).toLocaleString()}</small></td>
+      <td>${high ? o.approvals + "/" + my.ra : "n/a"}</td>
+      <td>${o.financier !== ethers.ZeroAddress ? "Financed by " + short(o.financier) + "<br>owes " + eth(o.financierDueWei) : o.financeRequested ? "Requested" : "–"}</td>
+      <td>${a || "–"}</td></tr>`;
+  }
+  $("orders").innerHTML = rows || '<tr><td colspan="8" style="color:var(--mut)">No orders yet.</td></tr>';
+}
+
+async function loadEvents() {
+  try {
+    const logs = (await tp.queryFilter("*", CONFIG.DEPLOY_BLOCK)).filter(l => l.fragment).slice(-25).reverse();
+    const list = $("events");
+    list.replaceChildren();
+    if (logs.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "audit-empty";
+      empty.textContent = "No activity yet. Create an order to get started.";
+      list.append(empty);
+      return;
+    }
+
+    for (const log of logs) {
+      const args = log.args;
+      const orderLabel = (id) => `Order #${id}`;
+      let title = "Contract activity";
+      let details = `Event: ${log.fragment.name}`;
+      let order = "";
+
+      switch (log.fragment.name) {
+        case "OrderCreated":
+          title = "Order created";
+          order = orderLabel(args.id);
+          details = `Created by ${short(args.buyer)} for $${(Number(args.invoiceUsd) / 1e8).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}. Supplier: ${short(args.supplier)}. The invoice reference is stored as a hash.`;
+          break;
+        case "OrderFunded":
+          title = "Escrow funded";
+          order = orderLabel(args.id);
+          details = `${eth(args.weiLocked)} ETH was locked for this order at $${(Number(args.ethUsdPrice) / 1e8).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per ETH.`;
+          break;
+        case "MilestoneRecorded": {
+          const milestone = Number(args.milestone);
+          title = milestone === 2 ? "Shipment marked as dispatched" : milestone === 3 ? "Delivery confirmed" : "Shipment update recorded";
+          order = orderLabel(args.id);
+          details = `Recorded by ${short(args.verifier)}. Evidence reference: ${args.evidenceCid || "not provided"}.`;
+          break;
+        }
+        case "ApprovalGranted":
+          title = "Payment approval received";
+          order = orderLabel(args.id);
+          details = `${short(args.approver)} approved the payment. ${args.approvals} approval(s) recorded so far.`;
+          break;
+        case "PaymentReleased":
+          title = "Payment released";
+          order = orderLabel(args.id);
+          details = `${eth(args.toSupplier)} ETH is available to the supplier${args.toFinancier > 0n ? `; ${eth(args.toFinancier)} ETH is available to the financier` : ""}.`;
+          break;
+        case "Refunded":
+          title = "Refund credited to buyer";
+          order = orderLabel(args.id);
+          details = `${eth(args.amount)} ETH was credited to the buyer's withdrawable balance.`;
+          break;
+        case "FinancingRequested":
+          title = "Invoice financing requested";
+          order = orderLabel(args.id);
+          details = `The supplier (${short(args.supplier)}) asked for an advance against this invoice.`;
+          break;
+        case "FinancingFunded":
+          title = "Invoice financing provided";
+          order = orderLabel(args.id);
+          details = `${short(args.financier)} provided an advance of ${eth(args.advanceWei)} ETH. ${eth(args.dueWei)} ETH is due to the financier from the escrow when payment is released.`;
+          break;
+        case "Withdrawn":
+          title = "Funds withdrawn";
+          details = `${short(args.account)} withdrew ${eth(args.amount)} ETH to their wallet.`;
+          break;
+      }
+
+      const item = document.createElement("li");
+      item.className = "audit-item";
+      const dot = document.createElement("span");
+      dot.className = "audit-dot";
+      dot.setAttribute("aria-hidden", "true");
+      const content = document.createElement("div");
+      content.className = "audit-content";
+      const heading = document.createElement("div");
+      heading.className = "audit-heading";
+      const headingText = document.createElement("h3");
+      headingText.className = "audit-title";
+      headingText.textContent = title;
+      heading.append(headingText);
+      if (order) {
+        const orderText = document.createElement("span");
+        orderText.className = "audit-order";
+        orderText.textContent = order;
+        heading.append(orderText);
+      }
+      const detailText = document.createElement("p");
+      detailText.className = "audit-details";
+      detailText.textContent = details;
+      const link = document.createElement("a");
+      link.className = "audit-link";
+      link.href = `https://sepolia.etherscan.io/tx/${log.transactionHash}`;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "View transaction on Sepolia ↗";
+      content.append(heading, detailText, link);
+      item.append(dot, content);
+      list.append(item);
+    }
+  } catch (e) {
+    const error = document.createElement("li");
+    error.className = "audit-empty";
+    error.textContent = `Could not load activity history: ${reason(e)}`;
+    $("events").replaceChildren(error);
+  }
+}
+
+// ───── write actions ─────
+$("btnCreate").onclick = () => {
+  const usdVal = BigInt(Math.round(Number($("cUsd").value) * 1e8)), dl = Math.floor(Date.now() / 1000) + Number($("cDeadline").value) * 60;
+  run("Create order", () => tp.createOrder($("cSupplier").value.trim(), ethers.id($("cInvoice").value.trim()), usdVal, dl));
+};
+window.fund = (id) => run("Fund escrow", async () => { const q = await tp.quoteWei(id); return tp.fundOrder(id, { value: q + q / 100n }); }); // +1% buffer, excess is credited back
+window.milestone = (id, m) => { const cid = prompt("Evidence reference (IPFS CID / URL / BoL number):", "ipfs://demo-evidence") || ""; run(m === 2 ? "Dispatch" : "Delivery", () => tp.recordMilestone(id, m, cid)); };
+window.approve = (id) => run("Approve release", () => tp.approveRelease(id));
+window.release = (id) => run("Release payment", () => tp.releasePayment(id));
+window.refund = (id) => run("Claim refund", () => tp.claimRefund(id));
+window.reqFin = (id) => run("Request financing", () => tp.requestFinancing(id));
+window.fundFin = (id) => run("Fund advance", async () => { const [adv] = await tp.financingQuote(id); return tp.fundFinancing(id, { value: adv }); });
+$("btnWithdraw").onclick = () => run("Withdraw", () => tp.withdraw());
+$("btnGrant").onclick = () => run("Grant role", () => tp.grantRole(ROLE[$("gRole").value], $("gWallet").value.trim()));
+$("btnConnect").onclick = connect; $("btnRefresh").onclick = refresh;
+</script>
+</body>
+</html>

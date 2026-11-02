@@ -1,0 +1,54 @@
+◇ injected env (0) from .env
+
+  TracePay
+    ✔ TC-01 happy path: create → fund (oracle) → dispatch → deliver → release → withdraw
+    ✔ TC-02 oracle conversion is correct for different prices
+    ✔ TC-03 DoA: high-value order needs 2 distinct approvals before release
+    ✔ TC-04 invoice financing: waterfall pays financier first, remainder to supplier
+    ✔ TC-05 refund after deadline when not delivered
+    ✔ TC-06 overpayment is credited back to buyer
+    ✔ TC-07 NEG duplicate invoice hash is rejected
+    ✔ TC-08 NEG stale oracle price blocks funding
+    ✔ TC-09 NEG invalid (negative) oracle price blocks quoting
+    ✔ TC-10 NEG underfunding reverts
+    ✔ TC-11 NEG only verifier can record milestones, and only in order
+    ✔ TC-12 NEG buyer cannot approve own payment (separation of duties)
+    ✔ TC-13 NEG same approver cannot approve twice
+    ✔ TC-14 NEG release before delivery and double release both revert
+    ✔ TC-15 NEG non-financier cannot fund financing; wrong amount reverts
+    ✔ TC-16 NEG withdraw with empty balance reverts; refund blocked after delivery
+
+·---------------------------------|---------------------------|-------------|-----------------------------·
+|      Solc version: 0.8.24       ·  Optimizer enabled: true  ·  Runs: 200  ·  Block limit: 30000000 gas  │
+··································|···························|·············|······························
+|  Methods                                                                                                │
+·············|····················|·············|·············|·············|···············|··············
+|  Contract  ·  Method            ·  Min        ·  Max        ·  Avg        ·  # calls      ·  usd (avg)  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  approveRelease    ·          -  ·          -  ·      58259  ·            3  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  claimRefund       ·          -  ·          -  ·      57556  ·            1  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  createOrder       ·          -  ·          -  ·     181063  ·           16  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  fundFinancing     ·          -  ·          -  ·      85353  ·            1  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  fundOrder         ·      94510  ·     116781  ·      96535  ·           11  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  grantRole         ·      51481  ·      51493  ·      51490  ·           65  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  recordMilestone   ·      32984  ·      32995  ·      32990  ·           14  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  releasePayment    ·      61888  ·      69569  ·      64333  ·            5  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  requestFinancing  ·          -  ·          -  ·      30628  ·            2  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  TracePay  ·  withdraw          ·          -  ·          -  ·      32410  ·            1  ·          -  │
+·············|····················|·············|·············|·············|···············|··············
+|  Deployments                    ·                                         ·  % of limit   ·             │
+··································|·············|·············|·············|···············|··············
+|  TracePay                       ·    2227080  ·    2227092  ·    2227091  ·        7.4 %  ·          -  │
+·---------------------------------|-------------|-------------|-------------|---------------|-------------·
+
+  16 passing (3s)
+
