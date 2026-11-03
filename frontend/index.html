@@ -299,7 +299,9 @@ async function loadOrders() {
     const done = o.approvals >= my.ra; let a = "";
     if (isBuyer && st === 0) a += `<button onclick="fund(${id})">Fund escrow</button>`;
     if (my.verifier && st === 1) a += `<button onclick="milestone(${id},2)">Mark dispatched</button>`;
+    else if (st === 1 && !my.verifier) a += `<span style="font-size:12px;color:var(--mut)">⏳ Waiting for Verifier to dispatch</span>`;
     if (my.verifier && st === 2) a += `<button onclick="milestone(${id},3)">Confirm delivery</button>`;
+    else if (st === 2 && !my.verifier) a += `<span style="font-size:12px;color:var(--mut)">⏳ In transit (awaiting Verifier delivery)</span>`;
     if (isSup && (st === 1 || st === 2) && !o.financeRequested) a += `<button class="sec" onclick="reqFin(${id})">Request financing</button>`;
     if (my.financier && o.financeRequested && o.financier === ethers.ZeroAddress && (st === 1 || st === 2)) a += `<button onclick="fundFin(${id})">Fund advance</button>`;
     if (my.approver && st === 3 && high && !isBuyer && !isSup && !(await tp.hasApproved(id, me))) a += `<button class="sec" onclick="approve(${id})">Approve</button>`;
