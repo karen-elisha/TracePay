@@ -186,12 +186,13 @@
 <div id="toast"></div>
 
 <script>
+const $ = (id) => document.getElementById(id);
 // ─────────────── CONFIG: edit these two lines after you deploy ───────────────
 const CONFIG = {
   CONTRACT_ADDRESS: localStorage.getItem("TRACEPAY_ADDR") || "0x78bb5DF6c5d26A92d723588b10d0f4E4Ffd171BD",
   DEPLOY_BLOCK: Number(localStorage.getItem("TRACEPAY_BLOCK")) || 12041103
 };
-if (localStorage.getItem("TRACEPAY_ADDR")) {
+if (localStorage.getItem("TRACEPAY_ADDR") && $("btnReset")) {
   $("btnReset").style.display = "inline";
 }
 const SEPOLIA = { chainId: "0xaa36a7", chainName: "Sepolia", nativeCurrency: { name: "SepoliaETH", symbol: "ETH", decimals: 18 },
@@ -221,7 +222,6 @@ const STATUS = ["Created", "Funded", "Dispatched", "Delivered", "Settled", "Refu
 const ROLE = { VERIFIER_ROLE: ethers.id("VERIFIER_ROLE"), APPROVER_ROLE: ethers.id("APPROVER_ROLE"), FINANCIER_ROLE: ethers.id("FINANCIER_ROLE") };
 
 let provider, signer, me, tp, my = {};
-const $ = (id) => document.getElementById(id);
 const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
 const eth = (w) => Number(ethers.formatEther(w)).toFixed(4);
 const usd = (v) => "$" + (Number(v) / 1e8).toLocaleString();
@@ -473,6 +473,13 @@ $("btnDeploy").onclick = async () => {
     return deployed.deploymentTransaction();
   });
 };
+
+// Auto-connect if wallet is already unlocked/authorized
+if (window.ethereum) {
+  window.ethereum.request({ method: "eth_accounts" }).then(accs => {
+    if (accs && accs.length > 0) connect();
+  }).catch(() => {});
+}
 </script>
 </body>
 </html>
