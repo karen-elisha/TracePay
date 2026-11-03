@@ -156,7 +156,7 @@
       <label>Supplier wallet</label><input id="cSupplier" placeholder="0x…">
       <label>Invoice reference (hashed in browser; never stored on-chain)</label><input id="cInvoice" placeholder="INV-2026-0001">
       <label>Invoice value (USD)</label><input id="cUsd" type="number" value="1000">
-      <label>Delivery deadline (minutes from now)</label><input id="cDeadline" type="number" value="60">
+      <label>Delivery deadline (days from now)</label><input id="cDeadline" type="number" step="any" min="0.01" value="7">
       <button id="btnCreate">Create order</button></div>
   </section>
 
@@ -417,7 +417,7 @@ async function loadEvents() {
 
 // ───── write actions ─────
 $("btnCreate").onclick = () => {
-  const usdVal = BigInt(Math.round(Number($("cUsd").value) * 1e8)), dl = Math.floor(Date.now() / 1000) + Number($("cDeadline").value) * 60;
+  const usdVal = BigInt(Math.round(Number($("cUsd").value) * 1e8)), dl = Math.floor(Date.now() / 1000) + Math.round(Number($("cDeadline").value) * 86400);
   run("Create order", () => tp.createOrder($("cSupplier").value.trim(), ethers.id($("cInvoice").value.trim()), usdVal, dl));
 };
 window.fund = (id) => run("Fund escrow", async () => { const q = await tp.quoteWei(id); return tp.fundOrder(id, { value: q + q / 100n }); }); // +1% buffer, excess is credited back
