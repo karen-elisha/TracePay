@@ -308,7 +308,16 @@ async function loadOrders() {
 
 async function loadEvents() {
   try {
-    const logs = (await tp.queryFilter("*", CONFIG.DEPLOY_BLOCK)).filter(l => l.fragment).slice(-25).reverse();
+    const currentBlock = await provider.getBlockNumber();
+    // Public Sepolia RPC nodes prune blocks older than ~8,000-10,000 blocks
+    const fromBlock = Math.max(CONFIG.DEPLOY_BLOCK || 0, currentBlock - 8000);
+    let rawLogs;
+    try {
+      rawLogs = await tp.queryFilter("*", fromBlock);
+    } catch (e1) {
+      rawLogs = await tp.queryFilter("*", Math.max(0, currentBlock - 2000));
+    }
+    const logs = rawLogs.filter(l => l.fragment).slice(-25).reverse();
     const list = $("events");
     list.replaceChildren();
     if (logs.length === 0) {
