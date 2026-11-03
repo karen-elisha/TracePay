@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TracePay – Supply-Chain Trade Finance DApp</title>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="bytecode.js"></script>
 <style>
   :root{
     --bg:#eef6ff;
@@ -143,8 +144,12 @@
     </div>
   </div>
 
-  <div class="status-badge" id="status">Not connected</div>
-  <button id="btnConnect">Connect MetaMask</button>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="status-badge" id="status">Not connected</div>
+    <button id="btnDeploy" class="sec" style="font-size:12px;padding:8px 12px;cursor:pointer" title="Deploy a new TracePay contract on Sepolia with your wallet as Admin">⚡ Deploy as Admin</button>
+    <button id="btnConnect">Connect MetaMask</button>
+    <a id="btnReset" href="#" style="font-size:11px;color:var(--bad);display:none;margin-left:4px" onclick="localStorage.clear();location.reload();">Reset contract</a>
+  </div>
 </header>
 
 <main>
@@ -182,7 +187,13 @@
 
 <script>
 // ─────────────── CONFIG: edit these two lines after you deploy ───────────────
-const CONFIG = { CONTRACT_ADDRESS: "0x78bb5DF6c5d26A92d723588b10d0f4E4Ffd171BD", DEPLOY_BLOCK: 12041103 };
+const CONFIG = {
+  CONTRACT_ADDRESS: localStorage.getItem("TRACEPAY_ADDR") || "0x78bb5DF6c5d26A92d723588b10d0f4E4Ffd171BD",
+  DEPLOY_BLOCK: Number(localStorage.getItem("TRACEPAY_BLOCK")) || 12041103
+};
+if (localStorage.getItem("TRACEPAY_ADDR")) {
+  $("btnReset").style.display = "inline";
+}
 const SEPOLIA = { chainId: "0xaa36a7", chainName: "Sepolia", nativeCurrency: { name: "SepoliaETH", symbol: "ETH", decimals: 18 },
   rpcUrls: ["https://ethereum-sepolia-rpc.publicnode.com"], blockExplorerUrls: ["https://sepolia.etherscan.io"] };
 
@@ -439,6 +450,29 @@ window.fundFin = (id) => run("Fund advance", async () => { const [adv] = await t
 $("btnWithdraw").onclick = () => run("Withdraw", () => tp.withdraw());
 $("btnGrant").onclick = () => run("Grant role", () => tp.grantRole(ROLE[$("gRole").value], $("gWallet").value.trim()));
 $("btnConnect").onclick = connect; $("btnRefresh").onclick = refresh;
+
+$("btnDeploy").onclick = async () => {
+  if (!signer) {
+    await connect();
+    if (!signer) return;
+  }
+  if (!confirm(`Deploy a new TracePay contract on Sepolia with your wallet (${short(me)}) as Admin?`)) return;
+  run("Deploy TracePay", async () => {
+    toast("⏳ Deploying TracePay... please confirm transaction in MetaMask");
+    const factory = new ethers.ContractFactory(FULL_ABI, BYTECODE, signer);
+    // Chainlink Sepolia ETH/USD feed: 0x694AA1769357215DE4FAC081bf1f309aDC325306, DoA threshold: $50 USD (50*1e8), 2 required approvals
+    const deployed = await factory.deploy("0x694AA1769357215DE4FAC081bf1f309aDC325306", 50n * 10n ** 8n, 2);
+    toast(`⏳ Deployment submitted: ${tx(deployed.deploymentTransaction().hash)}`);
+    await deployed.waitForDeployment();
+    const newAddr = await deployed.getAddress();
+    const receipt = await deployed.deploymentTransaction().wait();
+    localStorage.setItem("TRACEPAY_ADDR", newAddr);
+    localStorage.setItem("TRACEPAY_BLOCK", receipt.blockNumber);
+    toast(`🎉 Contract deployed at ${short(newAddr)}! You are now the Admin.`);
+    setTimeout(() => location.reload(), 2000);
+    return deployed.deploymentTransaction();
+  });
+};
 </script>
 </body>
 </html>
