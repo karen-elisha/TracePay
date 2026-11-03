@@ -295,20 +295,27 @@ async function loadOrders() {
   const n = Number(await tp.orderCount()); let rows = "";
   for (let id = n; id >= 1; id--) {
     const o = await tp.orders(id); const st = Number(o.status);
-    const high = o.invoiceUsd >= my.th, now = Date.now() / 1000, isBuyer = o.buyer === me, isSup = o.supplier === me;
+    const meLower = (me || "").toLowerCase();
+    const isBuyer = o.buyer.toLowerCase() === meLower;
+    const isSup = o.supplier.toLowerCase() === meLower;
+    const high = o.invoiceUsd >= my.th, now = Date.now() / 1000;
     const done = o.approvals >= my.ra; let a = "";
     if (isBuyer && st === 0) a += `<button onclick="fund(${id})">Fund escrow</button>`;
     if (my.verifier && st === 1) a += `<button onclick="milestone(${id},2)">Mark dispatched</button>`;
-    else if (st === 1 && !my.verifier) a += `<span style="font-size:12px;color:var(--mut)">⏳ Waiting for Verifier to dispatch</span>`;
+    else if (st === 1 && !my.verifier) a += `<div style="font-size:11px;color:var(--mut)">⏳ Waiting for Verifier to dispatch</div>`;
     if (my.verifier && st === 2) a += `<button onclick="milestone(${id},3)">Confirm delivery</button>`;
-    else if (st === 2 && !my.verifier) a += `<span style="font-size:12px;color:var(--mut)">⏳ In transit (awaiting Verifier delivery)</span>`;
-    if (isSup && (st === 1 || st === 2) && !o.financeRequested) a += `<button class="sec" onclick="reqFin(${id})">Request financing</button>`;
-    if (my.financier && o.financeRequested && o.financier === ethers.ZeroAddress && (st === 1 || st === 2)) a += `<button onclick="fundFin(${id})">Fund advance</button>`;
-    if (my.approver && st === 3 && high && !isBuyer && !isSup && !(await tp.hasApproved(id, me))) a += `<button class="sec" onclick="approve(${id})">Approve</button>`;
-    if (st === 3) a += `<button onclick="release(${id})" ${high && !done ? "disabled title='DoA approvals missing'" : ""}>Release payment</button>`;
-    if (isBuyer && (st === 1 || st === 2) && now > Number(o.deadline)) a += `<button class="sec" onclick="refund(${id})">Claim refund</button>`;
+    else if (st === 2 && !my.verifier) a += `<div style="font-size:11px;color:var(--mut)">⏳ In transit (awaiting Verifier delivery)</div>`;
+    if (isSup && (st === 1 || st === 2) && !o.financeRequested) a += `<div style="margin-top:4px"><button class="sec" style="font-size:12px;font-weight:700" onclick="reqFin(${id})">💸 Request early financing</button></div>`;
+    else if (isSup && o.financeRequested && o.financier === ethers.ZeroAddress) a += `<div style="font-size:11px;color:var(--warn);margin-top:3px">⏳ Financing requested (waiting for lender)</div>`;
+    if (my.financier && o.financeRequested && o.financier === ethers.ZeroAddress && (st === 1 || st === 2)) a += `<div style="margin-top:4px"><button onclick="fundFin(${id})">Fund advance (90%)</button></div>`;
+    if (my.approver && st === 3 && high && !isBuyer && !isSup && !(await tp.hasApproved(id, me))) a += `<div style="margin-top:4px"><button class="sec" onclick="approve(${id})">Approve release</button></div>`;
+    if (st === 3) a += `<div style="margin-top:4px"><button onclick="release(${id})" ${high && !done ? "disabled title='DoA approvals missing'" : ""}>Release payment</button></div>`;
+    if (isBuyer && (st === 1 || st === 2) && now > Number(o.deadline)) a += `<div style="margin-top:4px"><button class="sec" onclick="refund(${id})">Claim refund</button></div>`;
     rows += `<tr><td>${id}</td>
-      <td class="mono">B ${short(o.buyer)}<br>S ${short(o.supplier)}</td>
+      <td class="mono">
+        B ${short(o.buyer)}${isBuyer ? ' <span class="pill" style="font-size:10px;padding:2px 6px;color:#2563eb;background:rgba(37,99,235,0.12)">You</span>' : ""}<br>
+        S ${short(o.supplier)}${isSup ? ' <span class="pill" style="font-size:10px;padding:2px 6px;color:#16a34a;background:rgba(22,163,74,0.14)">You (Supplier)</span>' : ""}
+      </td>
       <td>${usd(o.invoiceUsd)}${high ? ' <span class="pill">high-value</span>' : ""}<br><span class="mono" style="color:var(--mut)">${o.invoiceHash.slice(0, 10)}…</span></td>
       <td>${o.escrowWei > 0n ? eth(o.escrowWei) + " ETH<br><small style='color:var(--mut)'>@ $" + (Number(o.lockedPrice) / 1e8).toFixed(2) + "</small>" : "–"}</td>
       <td class="s${st}"><b>${STATUS[st]}</b><br><small style="color:var(--mut)">due ${new Date(Number(o.deadline) * 1000).toLocaleString()}</small></td>
